@@ -2,6 +2,7 @@ import utils.ClientComm;
 import utils.CompetitionParameters;
 import utils.ElapsedWallTimer;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,16 +18,27 @@ public class TestLearningClient
     {
         assert (CompetitionParameters.USE_SOCKETS);
         /** Init params */
-        int gameId = 0;
-        String shDir = "./src/utils";
+        int gameId = 3;
+        System.out.println("gameID:" + gameId);
+        
+        String shDir = "./clients/GVGAI-JavaClient/src/utils";
         String serverDir;
         if (CompetitionParameters.OS_WIN) {
-            serverDir = "..\\..";
+            serverDir = ".\\";
         } else {
             serverDir = "../..";
         }
         String agentName = "agents.random.Agent";         //Agent to play with
-        boolean visuals = false;
+        boolean visuals = true;
+        
+        /** creat folders to record data */
+        String logsfolder = "logs";
+        File f = new File("."+File.separator+ logsfolder) ;
+        f.mkdir();
+        String clientout = "client-out";
+        File f2 = new File("."+File.separator+ clientout) ;
+        f2.mkdir();
+
         /** Get arguments */
         Map<String, List<String>> params = new HashMap<>();
         List<String> options = null;
@@ -53,26 +65,31 @@ public class TestLearningClient
         }
         if (params.containsKey("shDir")) {
             shDir = params.get("shDir").get(0);
+            System.out.println(shDir);
         }
         if (params.containsKey("serverDir")) {
             serverDir = params.get("serverDir").get(0);
+            System.out.println(serverDir);
         }
         if (params.containsKey("agentName")) {
             agentName = params.get("agentName").get(0);
         }
         if (params.containsKey("visuals")) {
             visuals = true;
+            System.out.println(visuals);
         }
+        
+        
+        
         ElapsedWallTimer wallClock = new ElapsedWallTimer();
 
         //Available controllers:
         String scriptFile;
         if (CompetitionParameters.OS_WIN) {
-            scriptFile = shDir +  "\\runServer_nocompile.bat";
+            scriptFile = shDir + "\\runServer_nocompile.bat";
         } else {
             scriptFile = shDir + "/runServer_nocompile.sh";
         }
-
         //Start the server side of the communication.
         try{
             String[] cmd;

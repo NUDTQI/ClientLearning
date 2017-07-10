@@ -1,7 +1,8 @@
-package agents.random;
+package agents.NUDTQI;
 
 /**
- * Created by Daniel on 21.05.2017.
+ * Created by qi on 05.07.2017.
+ * agent controller for single player learning track of GVGAI2017
  */
 
 import serialization.SerializableStateObservation;
@@ -10,6 +11,8 @@ import utils.ElapsedCpuTimer;
 
 import java.util.Random;
 
+import agents.NUDTQI.Sarsa;
+
 /**
  * This class has been built with a simple design in mind.
  * It is to be used to store player agent information,
@@ -17,14 +20,34 @@ import java.util.Random;
  * to and from the server.
  */
 public class Agent extends utils.AbstractPlayer {
+	
+	private Sarsa qlearner; 
+	
+	private RLAction lastact;
+	
+	private RLAction curact;
+	
+	private RLState laststate;
+	
+	private RLState curstate;
+	
+	private float reward;
+	
 
     /**
      * Public method to be called at the start of the communication. No game has been initialized yet.
      * Perform one-time setup here.
      */
-    public Agent(){}
+    public Agent(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
+    	
+    	
+    	qlearner = new Sarsa(); 
+    	
+    	this.init(sso,elapsedTimer);
+    }
 
 
+    
     /**
      * Public method to be called at the start of every level of a game.
      * Perform any level-entry initialization here.
@@ -34,6 +57,8 @@ public class Agent extends utils.AbstractPlayer {
     @Override
     public void init(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
 
+    	//qlearner.setParameters(in_gamma, in_beta, in_exploration);
+    	qlearner.initActionList(sso);
     }
 
     /**
@@ -48,35 +73,22 @@ public class Agent extends utils.AbstractPlayer {
      */
     @Override
     public Types.ACTIONS act(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
-
+      
+    	laststate = curstate;
+        curstate = qlearner.GetStateFromEnv(sso);
         
-        System.out.println(" avatarSpeed:"+ sso.avatarSpeed);
-        System.out.println(" x:" + sso.avatarOrientation[0]+ " y:" + sso.avatarOrientation[1]);
-        System.out.println(" LastAction:" + sso.avatarLastAction.name());
-        System.out.println(" avatarHealthPoints:" + sso.avatarHealthPoints);
-        System.out.println(" avatarLimitHealthPoints:" + sso.avatarLimitHealthPoints);
-        System.out.println(" avatarMaxHealthPoints:" + sso.avatarMaxHealthPoints);
-        System.out.println(" availableActions:" + sso.availableActions.size());
-        System.out.println(" avatarResources:" + sso.avatarResources.size());
-        System.out.println(" isAvatarAlive:" + sso.isAvatarAlive);
+        lastact = curact;
+        curact = qlearner.chooseAction(curstate);
         
-//        System.out.println(" observationGrid:" + sso.observationGrid.length);
-//        System.out.println(" resourcesPositions:" + sso.resourcesPositions.hashCode());
-//        System.out.println(" NPCPositions:" + sso.NPCPositions.length);
-//        System.out.println(" portalsPositions:" + sso.portalsPositions.length);
-//        System.out.println(" immovablePositions:" + sso.immovablePositions.length);
-//        System.out.println(" movablePositions:" + sso.movablePositions.length);
-//        System.out.println(" fromAvatarSpritesPositions:" + sso.fromAvatarSpritesPositions.length);
-        System.out.println("      ");
+        reward = sso.gameScore;
         
-        if (sso.gameTick == 800) {
-            return Types.ACTIONS.ACTION_ESCAPE;
-        }
-
-        int index = new Random().nextInt(sso.availableActions.size());
-        return sso.availableActions.get(index);
+        qlearner.update(laststate, lastact, reward, curstate, curact);
+		
+        Types.ACTIONS act = curact.GetAction();
+        
+        return act;
     }
-
+ 
     /**
      * Method used to perform actions in case of a game end.
      * This is the last thing called when a level is played (the game is already in a terminal state).
@@ -92,9 +104,8 @@ public class Agent extends utils.AbstractPlayer {
     @Override
     public int result(SerializableStateObservation sso, ElapsedCpuTimer elapsedTimer){
         Random r = new Random();
-        Integer level = r.nextInt(3);   
-        
-        
+        Integer level = r.nextInt(3);
+
         return level;
     }
 
